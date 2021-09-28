@@ -1,24 +1,29 @@
+const express = require("express");
+const routes = express.Router();
 const db = require("../config/feelme-firebase");
+const AuthController = require("../middlewares/auth");
+const { body, validationResult } = require("express-validator");
 
-module.exports = {
-  async userProfile(req, res) {
-    const userId = req.user.uid;
+routes.get("/myprofile", AuthController, async (req, res) => {
+  const userId = req.user.uid;
 
-    const snapshot = await db
-      .collection("user")
-      .where("user_id", "==", parseInt(userId))
-      .get();
+  const snapshot = await db
+    .collection("user")
+    .where("user_id", "==", parseInt(userId))
+    .get();
 
-    if (snapshot.empty) res.status(404).send("User not found");
+  if (snapshot.empty) res.status(404).send("User not found");
 
-    const data = [];
-    snapshot.forEach((doc) => {
-      data.push(doc.data());
-    });
+  const data = [];
+  snapshot.forEach((doc) => {
+    data.push(doc.data());
+  });
 
-    res.json(data);
-  },
-  async follow(req, res) {
+  res.json(data);
+});
+
+routes.get("/user/:userId/follow", AuthController, async (req, res) => {
+  try {
     const userId = req.user.uid;
     const userToFollow = req.params.userId;
 
@@ -46,8 +51,13 @@ module.exports = {
     });
 
     res.send("Success");
-  },
-  async unfollow(req, res) {
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+routes.get("/user/:userId/unfollow", AuthController, async (req, res) => {
+  try {
     const userId = req.user.uid;
     const userToFollow = req.params.userId;
 
@@ -77,9 +87,24 @@ module.exports = {
     });
 
     res.send("Success");
-  },
-  async saveUser(req, res) {
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+routes.post(
+  "/user",
+  AuthController,
+  [
+    body("name").not().isEmpty().withMessage("Name is obrigatory"),
+    body("email").not().isEmail().withMessage("E-mail is obrigatory"),
+    body("email").not().isEmail().withMessage("E-mail is invalid"),
+  ],
+  async (req, res) => {
     try {
+      if (!validationResult(req).isEmpty())
+        return res.status(400).json(validationResult(req));
+
       const user = req.user.uid;
       const { name, email, status, photoUrl } = req.body;
       const userData = {
@@ -99,5 +124,7 @@ module.exports = {
     } catch (error) {
       res.status(500).send(error);
     }
-  },
-};
+  }
+);
+
+module.exports = routes;

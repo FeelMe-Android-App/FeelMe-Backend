@@ -4,11 +4,11 @@
   },
   "emulators": {
     "functions": {
-      "port": 3003
+      "port": 3001
     },
     "ui": {
       "enabled": true,
-      "port": 3004
+      "port": 3002
     }
   }
 }
