@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "emulators": {
+    "functions": {
+      "port": 3003
+    },
+    "ui": {
+      "enabled": true,
+      "port": 3004
+    }
+  }
+}
