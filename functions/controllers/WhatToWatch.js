@@ -58,9 +58,10 @@ routes.post(
         return res.status(400).json(validationResult(req));
 
       const { name } = req.body;
-      // const doc = await db.collection("feeling").add({ name: name });
+      const doc = await db.collection("feeling").add({ name: name });
       res.send({
         name: name,
+        id: doc.id,
       });
     } catch (error) {
       res.status(500).send(error);
