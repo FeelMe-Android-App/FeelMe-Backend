@@ -3,7 +3,7 @@ const db = require("../config/feelme-firebase");
 module.exports = {
   async myStreamingList(req, res) {
     try {
-      const userId = req.user;
+      const userId = req.user.uid;
       const userStreamings = await db
         .collection("user")
         .where("user_id", "==", parseInt(userId))
@@ -18,7 +18,7 @@ module.exports = {
   },
   async saveStreaming(req, res) {
     try {
-      const userId = req.user;
+      const userId = req.user.uid;
       const { streamingId } = req.body;
       const streamingsList = [...streamingId];
 
@@ -41,7 +41,7 @@ module.exports = {
   },
   async removeStreaming(req, res) {
     try {
-      const userId = req.user;
+      const userId = req.user.uid;
       const streamingId = req.params.id;
       const snapshot = await db
         .collection("user")

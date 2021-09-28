@@ -2,7 +2,7 @@ const db = require("../config/feelme-firebase");
 
 module.exports = {
   async userProfile(req, res) {
-    const userId = req.user;
+    const userId = req.user.uid;
 
     const snapshot = await db
       .collection("user")
@@ -19,7 +19,7 @@ module.exports = {
     res.json(data);
   },
   async follow(req, res) {
-    const userId = req.user;
+    const userId = req.user.uid;
     const userToFollow = req.params.userId;
 
     const follow = await db
@@ -48,7 +48,7 @@ module.exports = {
     res.send("Success");
   },
   async unfollow(req, res) {
-    const userId = req.user;
+    const userId = req.user.uid;
     const userToFollow = req.params.userId;
 
     const follow = await db
@@ -77,5 +77,27 @@ module.exports = {
     });
 
     res.send("Success");
+  },
+  async saveUser(req, res) {
+    try {
+      const user = req.user.uid;
+      const { name, email, status, photoUrl } = req.body;
+      const userData = {
+        name: name,
+        email: email,
+        status: status,
+        photoUrl: photoUrl ?? "",
+        user_id: user,
+        streaming: [],
+        follow: [],
+        follower: [],
+      };
+
+      const newUser = await db.collection("user").add(userData);
+      userData.id = newUser.id;
+      res.json(userData);
+    } catch (error) {
+      res.status(500).send(error);
+    }
   },
 };

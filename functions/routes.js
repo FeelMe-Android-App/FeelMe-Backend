@@ -5,6 +5,7 @@ const StreamingsController = require("./controllers/Streamings");
 const UserController = require("./controllers/User");
 const CommentsController = require("./controllers/Comments");
 const AuthController = require("./middlewares/auth");
+const { Router } = require("express");
 
 routes.get("/", (req, res) => {
   res.send("Ready");
@@ -25,14 +26,16 @@ routes.delete(
   StreamingsController.removeStreaming
 );
 
+routes.post("/user", AuthController, UserController.saveUser);
 routes.get("/myprofile", AuthController, UserController.userProfile);
 routes.get("/user/:userId/follow", AuthController, UserController.follow);
 routes.get("/user/:userId/unfollow", AuthController, UserController.unfollow);
 
 routes.get("/comment/:movieId", AuthController, CommentsController.getComments);
+routes.get("/comment", AuthController, CommentsController.getCommentByUsers);
 routes.post("/comment/:movieId", AuthController, CommentsController.addComment);
 routes.delete(
-  "/comment/:movieId",
+  "/comment/:commentId",
   AuthController,
   CommentsController.deleteComment
 );

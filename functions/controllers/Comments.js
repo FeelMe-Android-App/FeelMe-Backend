@@ -5,8 +5,8 @@ module.exports = {
   async getComments(req, res) {
     try {
       const movieId = req.params.movieId;
-      const { usersId } = req.body;
-      const usersReference = usersId.map((userId) =>
+      const { userId } = req.body;
+      const usersReference = userId.map((userId) =>
         admin.firestore.collection("user").doc(userId)
       );
 
@@ -24,9 +24,39 @@ module.exports = {
       };
 
       snapshot.forEach((doc) => {
-        const data = doc.data();
-        data.id = doc.id;
+        const dataDoc = doc.data();
+        dataDoc.id = doc.id;
         data.comments.push(data);
+      });
+
+      res.json(data);
+    } catch (error) {
+      res.status(500).send(error);
+    }
+  },
+  async getCommentByUsers() {
+    try {
+      const { userId } = req.body;
+      const usersReference = userId.map((userId) =>
+        admin.firestore.collection("user").doc(userId)
+      );
+
+      const snapshot = await db
+        .collection("comment")
+        .where("user_id", "in", usersReference)
+        .orderBy("date", "asc")
+        .get();
+
+      if (snapshot.empty) res.status(404).send("Comments not found");
+
+      const data = {
+        comments: [],
+      };
+
+      snapshot.forEach((doc) => {
+        const dataDoc = doc.data();
+        dataDoc.id = doc.id;
+        data.comments.push(dataDoc);
       });
 
       res.json(data);
@@ -58,7 +88,7 @@ module.exports = {
   async deleteComment(req, res) {
     try {
       const commentId = req.params.commentId;
-      const userId = req.params.userId;
+      const userId = req.user.uid;
 
       const snapshot = await db
         .collection("comment")
