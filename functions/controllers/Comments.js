@@ -9,15 +9,11 @@ routes.get("/comment/:movieId", AuthController, async (req, res) => {
   try {
     const movieId = req.params.movieId;
     const { userId } = req.body;
-    const usersReference = userId.map((userId) =>
-      admin.firestore.collection("user").doc(userId)
-    );
 
     const snapshot = await db
       .collection("comment")
-      .where("movie_id", "==", parseInt(movieId))
-      .where("user_id", "in", usersReference)
-      .orderBy("date", "asc")
+      .where("movie_id", "==", movieId)
+      .where("uid", "in", userId)
       .get();
 
     if (snapshot.empty) res.status(404).send("Movie not found");
@@ -29,7 +25,31 @@ routes.get("/comment/:movieId", AuthController, async (req, res) => {
     snapshot.forEach((doc) => {
       const dataDoc = doc.data();
       dataDoc.id = doc.id;
-      data.comments.push(data);
+      data.comments.push(dataDoc);
+    });
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+routes.get("/mycomments", AuthController, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+
+    const data = {
+      comments: [],
+    };
+
+    const snapshot = await db
+      .collection("comment")
+      .where("uid", "==", userId)
+      .orderBy("date", "asc")
+      .get();
+
+    snapshot.forEach((doc) => {
+      data.comments.push(doc.data());
     });
 
     res.json(data);
@@ -43,8 +63,8 @@ routes.get(
   AuthController,
   [
     body("userId").custom((value) => {
-      if (value.lenght > 0) return true;
-      throw new Error("Password confirmation does not match password");
+      if (value.length > 0) return true;
+      throw new Error(value);
     }),
   ],
   async (req, res) => {
@@ -53,13 +73,10 @@ routes.get(
         return res.status(400).json(validationResult(req));
 
       const { userId } = req.body;
-      const usersReference = userId.map((userId) =>
-        admin.firestore.collection("user").doc(userId)
-      );
 
       const snapshot = await db
         .collection("comment")
-        .where("user_id", "in", usersReference)
+        .where("uid", "in", userId)
         .orderBy("date", "asc")
         .get();
 
@@ -85,30 +102,41 @@ routes.get(
 routes.post(
   "/comment/:movieId",
   AuthController,
-  [
-    body("userId").not().isEmpty().withMessage("userId is required"),
-    body("comment").not().isEmpty().withMessage("comment is required"),
-  ],
+  [body("comment").not().isEmpty().withMessage("comment is required")],
   async (req, res) => {
     try {
       if (!validationResult(req).isEmpty())
         return res.status(400).json(validationResult(req));
 
+      const user = req.user;
       const movieId = req.params.movieId;
-      const { userId, comment, movieBanner } = req.body;
-      const userDoc = await db.collection("user").doc(userId).get();
+      const { comment, movieBanner } = req.body;
+      const userDoc = await db
+        .collection("user")
+        .where("uid", "==", user.uid)
+        .get();
+
+      const docList = [];
+
+      userDoc.forEach((doc) => {
+        docList.push(doc);
+      });
 
       if (userDoc.empty) return res.status(404).send("User not found.");
 
       const data = {
         movie_id: movieId,
-        user: userDoc.ref.path,
+        uid: user.uid,
+        user_profile: "",
         comment: comment,
         movie_banner: movieBanner,
         date: admin.firestore.Timestamp.fromDate(new Date()),
       };
 
-      db.collection("comments").add(data);
+      const newDocument = await db.collection("comment").add(data);
+      data.id = newDocument.id;
+
+      res.status(201).send(data);
     } catch (error) {
       res.status(500).send(error);
     }
@@ -123,7 +151,7 @@ routes.delete("/comment/:commentId", AuthController, async (req, res) => {
     const snapshot = await db
       .collection("comment")
       .where(admin.firestore.FieldPath.documentId(), "==", commentId)
-      .where("user_id", "==", userId)
+      .where("uid", "==", userId)
       .get();
 
     if (snapshot.empty) return res.status(404).send("Comment not found.");

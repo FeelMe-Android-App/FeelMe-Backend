@@ -64,3 +64,6 @@ node_modules/
 
 # dotenv environment variables file
 .env
+
+# service
+feelme-88911-firebase-adminsdk-6ietr-ec7b4353dc.json*

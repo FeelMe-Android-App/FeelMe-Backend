@@ -69,7 +69,7 @@ routes.post(
   }
 );
 
-routes.get("/feeling", async (req, res) => {
+routes.get("/feeling", AuthController, async (req, res) => {
   try {
     const feelingData = await db.collection("feeling").get();
     if (feelingData.empty) return res.status(404).send("No data to show.");

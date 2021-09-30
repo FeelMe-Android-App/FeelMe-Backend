@@ -16,7 +16,7 @@ module.exports = (req, res, next) => {
     .verifyIdToken(token)
     .then((decodedToken) => {
       req.user = decodedToken;
-      return next;
+      next();
     })
     .catch((error) => {
       res.status(401).send(error);
